@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Password Vault</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>🔒 Password Generator + Vault</h2>
+
+    <!-- Password Generator -->
+    <div class="generator">
+      <input type="text" id="generatedPassword" readonly placeholder="Generated Password" />
+      <div class="controls">
+        <label>Length: <span id="lengthValue">12</span></label>
+        <input type="range" id="length" min="6" max="20" value="12" />
+      </div>
+      <div>
+        <label><input type="checkbox" id="numbers" checked> Numbers</label>
+        <label><input type="checkbox" id="symbols" checked> Symbols</label>
+      </div>
+      <button onclick="generatePassword()">Generate</button>
+      <button onclick="copyPassword()">Copy</button>
+    </div>
+
+    <!-- Vault -->
+    <hr>
+    <h3>🔐 Save to Vault</h3>
+    <input type="text" id="title" placeholder="Title (e.g. Gmail)" />
+    <input type="text" id="username" placeholder="Username" />
+    <input type="text" id="password" placeholder="Password" />
+    <button onclick="saveToVault()">Save</button>
+
+    <h3>🗃️ My Vault</h3>
+    <div id="vaultList"></div>
+  </div>
+
+  <script>
+    function generatePassword() {
+      const length = document.getElementById("length").value;
+      const includeNumbers = document.getElementById("numbers").checked;
+      const includeSymbols = document.getElementById("symbols").checked;
+      let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      if (includeNumbers) chars += "0123456789";
+      if (includeSymbols) chars += "!@#$%^&*()_+[]{}<>?";
+      let password = "";
+      for (let i = 0; i < length; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById("generatedPassword").value = password;
+      document.getElementById("password").value = password;
+    }
+
+    function copyPassword() {
+      const pass = document.getElementById("generatedPassword");
+      pass.select();
+      document.execCommand("copy");
+      alert("Copied!");
+      setTimeout(() => navigator.clipboard.writeText(""), 15000); // clears after 15 sec
+    }
+
+    document.getElementById("length").oninput = function() {
+      document.getElementById("lengthValue").innerText = this.value;
+    };
+
+    function saveToVault() {
+      const title = document.getElementById("title").value;
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if (!title || !username || !password) return alert("Fill all fields!");
+
+      const vault = JSON.parse(localStorage.getItem("vault")) || [];
+      vault.push({ id: Date.now(), title, username, password });
+      localStorage.setItem("vault", JSON.stringify(vault));
+
+      document.getElementById("title").value = "";
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      showVault();
+    }
+
+    function deleteItem(id) {
+      let vault = JSON.parse(localStorage.getItem("vault")) || [];
+      vault = vault.filter((item) => item.id !== id);
+      localStorage.setItem("vault", JSON.stringify(vault));
+      showVault();
+    }
+
+    function showVault() {
+      const vault = JSON.parse(localStorage.getItem("vault")) || [];
+      const list = document.getElementById("vaultList");
+      list.innerHTML = vault
+        .map(
+          (item) => `
+        <div class="vault-item">
+          <strong>${item.title}</strong><br>
+          <small>${item.username}</small><br>
+          <input type="password" value="${item.password}" readonly>
+          <button onclick="deleteItem(${item.id})">Delete</button>
+        </div>`
+        )
+        .join("");
+    }
+
+    showVault();
+  </script>
+</body>
+</html>
